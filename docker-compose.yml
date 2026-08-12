@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: circleshare-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  backend:
+    build: ./backend
+    container_name: circleshare-backend
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    environment:
+      PORT: 5000
+      MONGO_URI: mongodb://mongo:27017/circleshare
+      JWT_SECRET: ${JWT_SECRET:-dev_secret_change_me}
+      JWT_EXPIRES_IN: 7d
+      CLIENT_ORIGIN: http://localhost:5173
+    ports:
+      - "5000:5000"
+
+  frontend:
+    build: ./frontend
+    container_name: circleshare-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:5000/api
+    ports:
+      - "5173:5173"
+
+volumes:
+  mongo-data:
